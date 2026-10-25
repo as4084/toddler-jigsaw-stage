@@ -21,6 +21,9 @@ body.playing .topbar, body.playing footer { display: none; }
 body.playing main { width: 100%; max-width: none; padding: .35rem; }
 body.playing #gameSection { margin: 0; padding: .65rem; border-radius: 16px; }
 body.playing .game-heading { align-items: center; }
+body.playing .panel { box-shadow: none; }
+body.playing .game-buttons { gap: .35rem; }
+body.playing .game-buttons button { padding: .65rem .8rem; }
 body.playing .game-heading h2 { font-size: 1.05rem; }
 body.playing .game-heading .hint { font-size: .8rem; }
 body.playing .canvas-wrap { border-radius: 12px; }
@@ -49,8 +52,11 @@ footer { padding: .25rem 1rem 1.5rem; text-align: center; color: #8c8378; font-s
 [hidden] { display: none !important; }
 @media (max-width: 620px) {
   body.playing main { padding: .2rem; }
-  body.playing #gameSection { padding: .45rem; }
-  body.playing .game-heading { margin-bottom: .45rem; }
+  body.playing #gameSection { padding: .25rem; }
+  body.playing .game-heading { margin-bottom: .3rem; }
+  body.playing .game-heading .hint { display: none; }
+  body.playing .game-buttons { gap: .25rem; margin-top: .35rem; }
+  body.playing .game-buttons button { padding: .5rem .55rem; font-size: .78rem; border-radius: 12px; }
   .topbar { align-items: flex-start; }
   .topbar button { max-width: 145px; font-size: .8rem; padding: .6rem .7rem; }
   .image-row { align-items: stretch; }

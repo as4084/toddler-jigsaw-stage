@@ -45,6 +45,13 @@
           <legend>ピースの回転</legend>
           <label><input type="checkbox" id="rotationEnabled"> 回転あり（90°ずつ）</label>
         </fieldset>
+        <fieldset>
+          <legend>完成図ガイド</legend>
+          <label><input type="radio" name="guideMode" value="always" checked> 常に表示</label>
+          <label><input type="radio" name="guideMode" value="first"> 最初だけ表示</label>
+          <label><input type="radio" name="guideMode" value="never"> 非表示</label>
+          <p class="hint">「最初だけ表示」は、最初のピースを正しく置くと消えます。</p>
+        </fieldset>
       </div>
       <p class="hint">設定はこの端末のブラウザーに保存されます。画像や遊んだ記録は保存しません。</p>
       <button id="settingsDone" class="secondary" type="button">設定をとじる</button>
@@ -60,10 +67,11 @@
           <button id="rotateLeft" class="secondary rotate" type="button" disabled aria-label="左に90度回転">↶ 回す</button>
           <button id="rotateRight" class="secondary rotate" type="button" disabled aria-label="右に90度回転">回す ↷</button>
           <button id="restartButton" class="secondary" type="button">やりなおす</button>
+          <button id="backToSetup" class="secondary" type="button">画像選択にもどる</button>
         </div>
       </div>
       <div class="canvas-wrap">
-        <canvas id="gameCanvas" width="960" height="1040" aria-label="パズル盤面"></canvas>
+        <canvas id="gameCanvas" width="960" height="1440" aria-label="パズル盤面"></canvas>
       </div>
       <div id="completion" class="completion" hidden>
         <div class="celebration" aria-hidden="true">🎉 ⭐ 🎉</div>

@@ -14,6 +14,7 @@
   const settingsToggle = $("settingsToggle");
   const settingsDone = $("settingsDone");
   const rotationCheckbox = $("rotationEnabled");
+  const guideModeInputs = [...document.querySelectorAll('input[name="guideMode"]')];
   const completion = $("completion");
 
   const STORAGE_KEY = "toddler-jigsaw-settings-v1";
@@ -30,19 +31,24 @@
   const saved = readSettings();
   document.querySelector(`input[name="pieceCount"][value="${saved.count}"]`).checked = true;
   rotationCheckbox.checked = saved.rotation;
+  document.querySelector(`input[name="guideMode"][value="${saved.guideMode}"]`).checked = true;
 
   function readSettings() {
     try {
       const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-      return { count: [4, 9, 16].includes(data.count) ? data.count : 4, rotation: !!data.rotation };
-    } catch { return { count: 4, rotation: false }; }
+      // Migrate the previous boolean setting to the new three-state option.
+      const legacyGuideMode = data.showGuide === false ? "never" : "first";
+      const guideMode = ["always", "first", "never"].includes(data.guideMode) ? data.guideMode : legacyGuideMode;
+      return { count: [4, 9, 16].includes(data.count) ? data.count : 4, rotation: !!data.rotation, guideMode };
+    } catch { return { count: 4, rotation: false, guideMode: "always" }; }
   }
   function saveSettings() {
     const count = Number(document.querySelector('input[name="pieceCount"]:checked').value);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ count, rotation: rotationCheckbox.checked }));
+    const guideMode = document.querySelector('input[name="guideMode"]:checked').value;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ count, rotation: rotationCheckbox.checked, guideMode }));
   }
   function currentSettings() {
-    return { count: Number(document.querySelector('input[name="pieceCount"]:checked').value), rotation: rotationCheckbox.checked };
+    return { count: Number(document.querySelector('input[name="pieceCount"]:checked').value), rotation: rotationCheckbox.checked, guideMode: document.querySelector('input[name="guideMode"]:checked').value };
   }
 
   settingsToggle.addEventListener("click", () => {
@@ -56,6 +62,7 @@
   });
   document.querySelectorAll('input[name="pieceCount"]').forEach(el => el.addEventListener("change", saveSettings));
   rotationCheckbox.addEventListener("change", saveSettings);
+  guideModeInputs.forEach(el => el.addEventListener("change", saveSettings));
 
   imageInput.addEventListener("change", async () => {
     const file = imageInput.files && imageInput.files[0];
@@ -82,6 +89,7 @@
   startButton.addEventListener("click", startGame);
   $("restartButton").addEventListener("click", startGame);
   $("playAgain").addEventListener("click", startGame);
+  $("backToSetup").addEventListener("click", returnToSetup);
   $("rotateLeft").addEventListener("click", () => rotateSelected(-1));
   $("rotateRight").addEventListener("click", () => rotateSelected(1));
 
@@ -92,7 +100,7 @@
     const cols = Math.sqrt(settings.count), rows = cols;
     // Use most of the canvas for the picture while preserving its aspect ratio.
     const aspect = selectedImage.width / selectedImage.height;
-    const maxW = W - 48, maxH = 610;
+    const maxW = W - 24, maxH = 900;
     let bw = maxW, bh = bw / aspect;
     if (bh > maxH) { bh = maxH; bw = bh * aspect; }
     board = { x: (W - bw) / 2, y: 28, w: bw, h: bh, cols, rows, cellW: bw / cols, cellH: bh / rows };
@@ -110,14 +118,24 @@
         pieces.push(p);
       }
     }
-    layoutTray();
-    // Shuffle the tray order and start every piece at 0°.
+    // Shuffle pieces, then randomly rotate roughly half when rotation mode is enabled.
     for (let i = pieces.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [pieces[i], pieces[j]] = [pieces[j], pieces[i]];
     }
+    if (settings.rotation) {
+      const rotateCount = Math.max(1, Math.floor(settings.count / 2));
+      const candidates = [...pieces];
+      for (let i = candidates.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+      }
+      candidates.slice(0, rotateCount).forEach(p => {
+        p.rotation = [90, 180, 270][Math.floor(Math.random() * 3)];
+      });
+    }
     layoutTray();
-    selectedPiece = null; dragging = null; guideVisible = true; moves = 0;
+    selectedPiece = null; dragging = null; guideVisible = settings.guideMode !== "never"; moves = 0;
     completion.hidden = true;
     // Switch to a focused puzzle-only screen after starting.
     document.body.classList.add("playing");
@@ -133,6 +151,18 @@
     $("rotateLeft").disabled = $("rotateRight").disabled = true;
     gameSection.scrollIntoView({ behavior: "smooth", block: "start" });
     draw();
+  }
+
+  function returnToSetup() {
+    document.body.classList.remove("playing");
+    gameSection.hidden = true;
+    document.querySelector(".setup").hidden = false;
+    parentSettings.hidden = true;
+    settingsToggle.setAttribute("aria-expanded", "false");
+    completion.hidden = true;
+    selectedPiece = null;
+    dragging = null;
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function makeTabs(cols, rows) {
@@ -340,7 +370,8 @@
     const inBoard = pointInBoard(point);
     if (inBoard && col === p.col && row === p.row && p.rotation % 360 === 0) {
       p.x = p.correctX; p.y = p.correctY; p.solved = true; selectedPiece = null;
-      guideVisible = false; moves++; playCorrectSound(); animateSuccess(p);
+      if (currentSettings().guideMode === "first") guideVisible = false;
+      moves++; playCorrectSound(); animateSuccess(p);
       if (pieces.every(piece => piece.solved)) {
         setTimeout(() => { completion.hidden = false; playCelebration(); }, 300);
       }
