@@ -17,6 +17,13 @@ h2 { margin: 0 0 .4rem; font-size: 1.25rem; }
 p { margin: .25rem 0; }
 .subtitle { color: #77717a; font-size: .92rem; }
 main { width: min(1120px, 100%); margin: 0 auto; padding: 0 1rem 1.5rem; }
+body.playing .topbar, body.playing footer { display: none; }
+body.playing main { width: 100%; max-width: none; padding: .35rem; }
+body.playing #gameSection { margin: 0; padding: .65rem; border-radius: 16px; }
+body.playing .game-heading { align-items: center; }
+body.playing .game-heading h2 { font-size: 1.05rem; }
+body.playing .game-heading .hint { font-size: .8rem; }
+body.playing .canvas-wrap { border-radius: 12px; }
 .panel { background: var(--paper); border: 2px solid var(--line); border-radius: 24px; padding: clamp(1rem, 3vw, 1.5rem); margin-bottom: 1rem; box-shadow: 0 5px 0 rgba(110, 78, 45, .05); }
 .file-label { display: block; font-weight: 800; margin-bottom: .5rem; }
 input[type=file] { max-width: 100%; padding: .5rem 0; }
@@ -41,6 +48,9 @@ canvas { display: block; width: 100%; height: auto; touch-action: none; }
 footer { padding: .25rem 1rem 1.5rem; text-align: center; color: #8c8378; font-size: .8rem; }
 [hidden] { display: none !important; }
 @media (max-width: 620px) {
+  body.playing main { padding: .2rem; }
+  body.playing #gameSection { padding: .45rem; }
+  body.playing .game-heading { margin-bottom: .45rem; }
   .topbar { align-items: flex-start; }
   .topbar button { max-width: 145px; font-size: .8rem; padding: .6rem .7rem; }
   .image-row { align-items: stretch; }

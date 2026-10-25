@@ -20,7 +20,7 @@
   const W = canvas.width, H = canvas.height;
   let selectedImage = null;
   let pieces = [];
-  let board = { x: 120, y: 48, w: 720, h: 480, cellW: 180, cellH: 160, cols: 2, rows: 2 };
+  let board = { x: 30, y: 28, w: 900, h: 600, cellW: 450, cellH: 300, cols: 2, rows: 2 };
   let selectedPiece = null;
   let dragging = null;
   let guideVisible = true;
@@ -90,13 +90,12 @@
     saveSettings();
     const settings = currentSettings();
     const cols = Math.sqrt(settings.count), rows = cols;
-    // Fit the picture into a wide board while preserving its aspect ratio.
+    // Use most of the canvas for the picture while preserving its aspect ratio.
     const aspect = selectedImage.width / selectedImage.height;
-    let bw = 720, bh = bw / aspect;
-    if (bh > 440) { bh = 440; bw = bh * aspect; }
-    if (bw < 400) { bw = 400; bh = bw / aspect; }
-    if (bh > 480) { bh = 480; bw = bh * aspect; }
-    board = { x: (W - bw) / 2, y: 38, w: bw, h: bh, cols, rows, cellW: bw / cols, cellH: bh / rows };
+    const maxW = W - 48, maxH = 610;
+    let bw = maxW, bh = bw / aspect;
+    if (bh > maxH) { bh = maxH; bw = bh * aspect; }
+    board = { x: (W - bw) / 2, y: 28, w: bw, h: bh, cols, rows, cellW: bw / cols, cellH: bh / rows };
     pieces = [];
     const tabs = makeTabs(cols, rows);
     for (let r = 0; r < rows; r++) {
@@ -120,6 +119,11 @@
     layoutTray();
     selectedPiece = null; dragging = null; guideVisible = true; moves = 0;
     completion.hidden = true;
+    // Switch to a focused puzzle-only screen after starting.
+    document.body.classList.add("playing");
+    document.querySelector(".setup").hidden = true;
+    parentSettings.hidden = true;
+    settingsToggle.setAttribute("aria-expanded", "false");
     gameSection.hidden = false;
     $("gameTitle").textContent = `${settings.count}ピースのパズル`;
     $("gameHint").textContent = settings.rotation
@@ -148,11 +152,11 @@
   function layoutTray() {
     const n = pieces.length;
     const cols = n <= 4 ? 4 : n <= 9 ? 5 : 6;
-    const gap = 12, margin = 24, trayTop = Math.max(board.y + board.h + 72, 390);
+    const gap = 10, margin = 18, trayTop = board.y + board.h + 78;
     const rows = Math.ceil(n / cols);
     const availW = (W - margin * 2 - gap * (cols - 1)) / cols;
-    const availH = (H - trayTop - 22 - gap * (rows - 1)) / rows;
-    const scale = Math.max(.24, Math.min(.58, availW / board.cellW, availH / board.cellH));
+    const availH = Math.max(52, (H - trayTop - 28 - gap * (rows - 1)) / rows);
+    const scale = Math.max(.22, Math.min(.78, availW / board.cellW, availH / board.cellH));
     const cw = board.cellW * scale, ch = board.cellH * scale;
     const totalW = cols * cw + (cols - 1) * gap;
     const startX = (W - totalW) / 2;
@@ -250,7 +254,7 @@
     }
     ctx.restore();
     ctx.fillStyle = "#8c8378"; ctx.font = "bold 22px sans-serif"; ctx.textAlign = "left";
-    ctx.fillText("ピースを ここからえらんでね", 26, Math.min(H - 15, board.y + board.h + 43));
+    ctx.fillText("ピースを ここからえらんでね", 26, Math.min(H - 15, board.y + board.h + 42));
     // Solved pieces stay locked on the board.
     pieces.filter(p => p.solved).forEach(p => drawPiece(p));
     pieces.filter(p => !p.solved && p !== dragging?.piece).forEach(p => drawPiece(p));
