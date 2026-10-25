@@ -349,7 +349,7 @@
     dragging = null;
     if (moved) {
       // Drop near the target cell to snap; otherwise leave the piece where dropped.
-      tryPlace(p, { x: point.x, y: point.y });
+      tryPlace(p, point, true);
     } else {
       selectedPiece = p;
       p.scale = 1;
@@ -360,24 +360,38 @@
   canvas.addEventListener("pointercancel", () => { dragging = null; draw(); });
 
   function pointInBoard(p) { return p.x >= board.x && p.x <= board.x + board.w && p.y >= board.y && p.y <= board.y + board.h; }
-  function tryPlace(p, point) {
+  function tryPlace(p, point, isDrag = false) {
     if (!p || p.solved) return;
-    const targetCx = p.correctX + p.w / 2, targetCy = p.correctY + p.h / 2;
-    const dropCx = point.x, dropCy = point.y;
-    // When dragging, the release point should be inside the correct cell; tapping selects the destination.
-    const col = Math.floor((dropCx - board.x) / board.cellW);
-    const row = Math.floor((dropCy - board.y) / board.cellH);
-    const inBoard = pointInBoard(point);
-    if (inBoard && col === p.col && row === p.row && p.rotation % 360 === 0) {
+    let correctPosition = false;
+
+    if (isDrag) {
+      // Judge the overlap of the piece body and its target cell, not the finger's release point.
+      // At least 80% overlap is enough, making placement forgiving for toddlers.
+      const left = Math.max(p.x, p.correctX);
+      const top = Math.max(p.y, p.correctY);
+      const right = Math.min(p.x + p.w, p.correctX + p.w);
+      const bottom = Math.min(p.y + p.h, p.correctY + p.h);
+      const overlapW = Math.max(0, right - left);
+      const overlapH = Math.max(0, bottom - top);
+      const overlapRatio = (overlapW * overlapH) / (p.w * p.h);
+      correctPosition = overlapRatio >= 0.8;
+    } else if (point && pointInBoard(point)) {
+      // Tap-to-place remains available: the tapped board cell is the intended destination.
+      const col = Math.floor((point.x - board.x) / board.cellW);
+      const row = Math.floor((point.y - board.y) / board.cellH);
+      correctPosition = col === p.col && row === p.row;
+    }
+
+    if (correctPosition && p.rotation % 360 === 0) {
       p.x = p.correctX; p.y = p.correctY; p.solved = true; selectedPiece = null;
       if (currentSettings().guideMode === "first") guideVisible = false;
       moves++; playCorrectSound(); animateSuccess(p);
       if (pieces.every(piece => piece.solved)) {
         setTimeout(() => { completion.hidden = false; playCelebration(); }, 300);
       }
-    } else {
-      // A drop on the wrong cell gently returns to the tray. If dropped outside the board, keep it there.
-      if (inBoard) { layoutTray(); }
+    } else if (point && pointInBoard(point)) {
+      // A failed attempt on the board returns the piece to the tray without losing it.
+      layoutTray();
     }
     updateRotateButtons(); draw();
   }
